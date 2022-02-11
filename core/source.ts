@@ -8,6 +8,7 @@ export interface Options {
   dataLoader: DataLoader;
   pageLoader: PageLoader;
   reader: Reader;
+  basePath: string;
 }
 
 /**
@@ -27,6 +28,9 @@ export default class Source {
   /** To load all resources (HTML pages and assets) */
   pageLoader: PageLoader;
 
+  /** Base path of the files */
+  basePath: string;
+
   /** The list of paths to ignore */
   ignored = new Set<string>();
 
@@ -34,6 +38,7 @@ export default class Source {
     this.pageLoader = options.pageLoader;
     this.dataLoader = options.dataLoader;
     this.reader = options.reader;
+    this.basePath = join("/", options.basePath);
   }
 
   /**
@@ -61,12 +66,17 @@ export default class Source {
 
   /** Load all sources */
   load() {
-    this.root = new Directory({ path: "/" });
+    this.root = new Directory({ path: this.basePath });
     return this.#loadDirectory(this.root);
   }
 
   /** Update a file */
   async update(file: string): Promise<void> {
+    // Check if the file is in the basePath
+    if (!file.startsWith(this.basePath)) {
+      return;
+    }
+
     // Check if the file is in the list of ignored paths
     for (const path of this.ignored) {
       if (file === path || file.startsWith(join(path, "/"))) {
@@ -159,11 +169,11 @@ export default class Source {
     if (this.root) {
       dir = this.root;
     } else {
-      dir = this.root = new Directory({ path: "/" });
+      dir = this.root = new Directory({ path: this.basePath });
       await this.#loadData(dir);
     }
 
-    for (const name of path.split("/")) {
+    for (const name of path.slice(this.basePath.length).split("/")) {
       if (!name) {
         continue;
       }

@@ -1,6 +1,6 @@
 import { Page } from "./filesystem.ts";
 import { Exception } from "./errors.ts";
-import { basename, extname, join } from "../deps/path.ts";
+import { basename, extname, join, posix } from "../deps/path.ts";
 
 import type { Data, Dest, Formats, PageType, Reader, Src } from "../core.ts";
 
@@ -10,6 +10,9 @@ export interface Options {
 
   /** The extensions instance used to save the loaders */
   formats: Formats;
+
+  /** The base path of the files */
+  basePath: string;
 }
 
 /**
@@ -22,9 +25,13 @@ export default class PageLoader {
   /** List of extensions to load page files and the loader used */
   formats: Formats;
 
+  /** The base path of the files */
+  basePath: string;
+
   constructor(options: Options) {
     this.reader = options.reader;
     this.formats = options.formats;
+    this.basePath = posix.join("/", options.basePath);
   }
 
   /** Load an asset Page */
@@ -57,6 +64,12 @@ export default class PageLoader {
       created: info?.birthtime || undefined,
       ext,
     });
+
+    // Remove the basePath of the destination
+    page.dest.path = posix.join(
+      "/",
+      page.dest.path.slice(this.basePath.length),
+    );
 
     // Prepare the data
     const data = await this.reader.read(path, pageLoader);

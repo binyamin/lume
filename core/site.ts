@@ -44,6 +44,7 @@ const defaults: SiteOptions = {
   cwd: Deno.cwd(),
   src: "./",
   dest: "./_site",
+  pages: "./",
   includes: "_includes",
   location: new URL("http://localhost"),
   quiet: false,
@@ -139,14 +140,14 @@ export default class Site {
     const src = this.src();
     const dest = this.dest();
     const { globalData } = this;
-    const { quiet, includes, cwd, prettyUrls } = this.options;
+    const { quiet, includes, cwd, prettyUrls, pages } = this.options;
     const { cssFile, jsFile } = this.options.components;
 
     // To load source files
     const reader = new Reader({ src });
     const formats = new Formats();
 
-    const pageLoader = new PageLoader({ reader, formats });
+    const pageLoader = new PageLoader({ reader, formats, basePath: pages });
     const dataLoader = new DataLoader({ reader, formats });
     const includesLoader = new IncludesLoader({ reader, includes, formats });
     const componentLoader = new ComponentLoader({ reader, formats });
@@ -155,6 +156,7 @@ export default class Site {
       reader,
       pageLoader,
       dataLoader,
+      basePath: pages,
     });
     const staticFiles = new StaticFiles();
 
@@ -580,14 +582,17 @@ export interface SiteOptions {
   /** The path of the current working directory */
   cwd: string;
 
-  /** The path of the site source */
+  /** The path of the site source, relative to cwd */
   src: string;
 
-  /** The path of the built destination */
+  /** The path of the built destination, relative to cwd */
   dest: string;
 
-  /** The default includes path */
+  /** The default includes path, relative to src */
   includes: string;
+
+  /** The pages directory, relative to src */
+  pages: string;
 
   /** Set `true` to enable the `dev` mode */
   dev: boolean;
